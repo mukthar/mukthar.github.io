@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BINU DRIVING SCHOOL</title>
+    <link rel="stylesheet" href="quiz.css">
+</head>
+<body>
+    <div class="banner">
+        <h1>Online Quiz Module</h1>
+        <p>BINU DRIVING SCHOOL, ALUVA</p>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quizContent">
+            <div class="timer-bar">
+                <div class="progress">Question <span id="currentQuestion">1</span> of 9</div>
+                <div class="timer">Time: <span id="timer">60</span>s</div>
+            </div>
+
+            <div id="questionContainer" class="question-container">
+                <!-- Question content will be inserted here -->
+            </div>
+
+            <div class="clearfix">
+                <button id="nextBtn" class="next-btn" onclick="nextQuestion()" disabled>Next</button>
+            </div>
+        </div>
+
+        <div id="resultContainer" class="result-container hidden">
+            <!-- Results will be shown here -->
+        </div>
+    </div>
+
+    <script src="quiz.js"></script>
+</body>
+</html>
