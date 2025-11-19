@@ -213,3 +213,43 @@ body {
     display: table;
     clear: both;
 }
+
+.language-selection {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.language-selection h2 {
+    font-size: 1.8em;
+    margin-bottom: 40px;
+    color: #333;
+}
+
+.language-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.language-btn {
+    padding: 20px 50px;
+    font-size: 1.5em;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.language-btn:hover {
+    background: #5568d3;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.refresh-btn:hover {
+    background: #5568d3 !important;
+}

@@ -13,10 +13,18 @@
     </div>
 
     <div class="quiz-container">
-        <div id="quizContent">
+        <div id="languageSelection" class="language-selection">
+            <h2>Select Your Language / നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക</h2>
+            <div class="language-buttons">
+                <button class="language-btn" onclick="selectLanguage('en')">English</button>
+                <button class="language-btn" onclick="selectLanguage('ml')">മലയാളം</button>
+            </div>
+        </div>
+
+        <div id="quizContent" class="hidden">
             <div class="timer-bar">
-                <div class="progress">Question <span id="currentQuestion">1</span> of 9</div>
-                <div class="timer">Time: <span id="timer">30</span>s</div>
+                <div class="progress"><span id="progressLabel">Question</span> <span id="currentQuestion">1</span> <span id="ofLabel">of</span> 9</div>
+                <div class="timer"><span id="timeLabel">Time:</span> <span id="timer">30</span>s</div>
             </div>
 
             <div id="questionContainer" class="question-container">
