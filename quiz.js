@@ -1,7 +1,7 @@
 // Configuration
 const CONFIG = {
-    questionTime: 60, // seconds per question
-    captchaTime: 60,  // seconds per captcha
+    questionTime: 30, // seconds per question
+    questionWithCaptchaTime: 45,  // seconds for question with captcha
     passPercentage: 50 // minimum percentage to pass
 };
 
@@ -145,9 +145,21 @@ let timeLeft = CONFIG.questionTime;
 let userAnswers = [];
 let captchaFailed = false;
 let currentCaptcha = null;
+let captchaQuestions = []; // Will hold indices of questions that need captcha
+let currentCaptchaInput = null; // Stores the captcha input for current question
 
 // Initialize quiz
 function initQuiz() {
+    // Randomly select 3 questions (out of 9) to show captcha
+    const indices = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    captchaQuestions = [];
+    for (let i = 0; i < 3; i++) {
+        const randomIndex = Math.floor(Math.random() * indices.length);
+        captchaQuestions.push(indices[randomIndex]);
+        indices.splice(randomIndex, 1);
+    }
+    console.log('Captcha will appear on questions:', captchaQuestions.map(i => i + 1));
+
     loadQuestion();
     startTimer();
 }
@@ -156,6 +168,7 @@ function initQuiz() {
 function loadQuestion() {
     const questionContainer = document.getElementById('questionContainer');
     const question = quizData[currentQuestionIndex];
+    const hasCaptcha = captchaQuestions.includes(currentQuestionIndex);
 
     let html = `
         <img src="${question.image}" alt="Question Image" class="question-image">
@@ -172,39 +185,33 @@ function loadQuestion() {
     });
 
     html += '</div>';
+
+    // Add captcha if this question requires it
+    if (hasCaptcha) {
+        currentCaptcha = captchaData[Math.floor(Math.random() * captchaData.length)];
+        html += `
+            <div class="captcha-container" style="margin-top: 20px;">
+                <h3>Security Verification</h3>
+                <p>Please enter the characters shown in the image below:</p>
+                <img src="${currentCaptcha.image}" alt="Captcha" class="captcha-image">
+                <input type="text" id="captchaInput" class="captcha-input"
+                       placeholder="Enter captcha" maxlength="6"
+                       oninput="checkCaptchaInput()">
+            </div>
+        `;
+        // Set longer time for questions with captcha
+        timeLeft = CONFIG.questionWithCaptchaTime;
+    } else {
+        currentCaptcha = null;
+        timeLeft = CONFIG.questionTime;
+    }
+
     questionContainer.innerHTML = html;
 
     selectedAnswer = null;
+    currentCaptchaInput = null;
     document.getElementById('nextBtn').disabled = true;
     document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
-}
-
-// Load captcha
-function loadCaptcha() {
-    const questionContainer = document.getElementById('questionContainer');
-
-    // Select random captcha
-    currentCaptcha = captchaData[Math.floor(Math.random() * captchaData.length)];
-
-    const html = `
-        <div class="captcha-container">
-            <h2>Security Verification</h2>
-            <p>Please enter the characters shown in the image below:</p>
-            <img src="${currentCaptcha.image}" alt="Captcha" class="captcha-image">
-            <input type="text" id="captchaInput" class="captcha-input"
-                   placeholder="Enter captcha" maxlength="6"
-                   oninput="checkCaptchaInput()">
-        </div>
-    `;
-
-    questionContainer.innerHTML = html;
-    document.getElementById('nextBtn').disabled = true;
-
-    // Reset timer for captcha
-    clearInterval(timerInterval);
-    timeLeft = CONFIG.captchaTime;
-    document.getElementById('timer').textContent = timeLeft;
-    startTimer();
 }
 
 // Select answer
@@ -217,13 +224,25 @@ function selectAnswer(index) {
     buttons[index].classList.add('selected');
 
     selectedAnswer = index;
-    document.getElementById('nextBtn').disabled = false;
+
+    // Check if we need to wait for captcha input
+    const captchaInput = document.getElementById('captchaInput');
+    if (captchaInput) {
+        // If captcha exists, enable next only if both answer and captcha are filled
+        if (captchaInput.value.length === 6) {
+            document.getElementById('nextBtn').disabled = false;
+        }
+    } else {
+        // No captcha, just enable next button
+        document.getElementById('nextBtn').disabled = false;
+    }
 }
 
 // Check captcha input
 function checkCaptchaInput() {
     const input = document.getElementById('captchaInput');
-    if (input.value.length === 6) {
+    // Enable next button only if both answer is selected AND captcha is filled
+    if (input.value.length === 6 && selectedAnswer !== null) {
         document.getElementById('nextBtn').disabled = false;
     } else {
         document.getElementById('nextBtn').disabled = true;
@@ -255,9 +274,8 @@ function startTimer() {
 function handleTimeout() {
     alert('Time is up!');
 
-    // Check if we're on a captcha
-    if ((currentQuestionIndex + 1) % 3 === 0 && currentQuestionIndex < 9 &&
-        document.getElementById('captchaInput')) {
+    // If current question has captcha and it's not filled, quiz fails
+    if (document.getElementById('captchaInput') && currentCaptcha) {
         captchaFailed = true;
         showResults();
     } else {
@@ -270,9 +288,10 @@ function handleTimeout() {
 function nextQuestion() {
     clearInterval(timerInterval);
 
-    // Check if this is a captcha
-    if (document.getElementById('captchaInput')) {
-        const input = document.getElementById('captchaInput').value;
+    // Check if current question has captcha
+    const captchaInput = document.getElementById('captchaInput');
+    if (captchaInput && currentCaptcha) {
+        const input = captchaInput.value;
         console.log('Captcha Input:', input);
         console.log('Captcha Answer:', currentCaptcha.answer);
         if (input !== currentCaptcha.answer) {
@@ -281,38 +300,30 @@ function nextQuestion() {
             showResults();
             return;
         }
-        // Captcha passed, continue to next question or end
-    } else {
-        // Record answer for question
-        if (selectedAnswer !== null) {
-            const question = quizData[currentQuestionIndex];
-            if (question.answers[selectedAnswer].correct) {
-                score++;
-            }
-            userAnswers.push({
-                question: currentQuestionIndex,
-                selected: selectedAnswer,
-                correct: question.answers[selectedAnswer].correct
-            });
-        }
-
-        currentQuestionIndex++;
-
-        // Check if we need to show captcha (after questions 3, 6, and 9)
-        if (currentQuestionIndex === 3 || currentQuestionIndex === 6 || currentQuestionIndex === 9) {
-            loadCaptcha();
-            return;
-        }
     }
 
-    // Check if quiz is complete (after last captcha)
+    // Record answer for question
+    if (selectedAnswer !== null) {
+        const question = quizData[currentQuestionIndex];
+        if (question.answers[selectedAnswer].correct) {
+            score++;
+        }
+        userAnswers.push({
+            question: currentQuestionIndex,
+            selected: selectedAnswer,
+            correct: question.answers[selectedAnswer].correct
+        });
+    }
+
+    currentQuestionIndex++;
+
+    // Check if quiz is complete
     if (currentQuestionIndex >= quizData.length) {
         showResults();
         return;
     }
 
     // Load next question
-    timeLeft = CONFIG.questionTime;
     document.getElementById('timer').textContent = timeLeft;
     loadQuestion();
     startTimer();
@@ -358,6 +369,8 @@ function restartQuiz() {
     selectedAnswer = null;
     userAnswers = [];
     captchaFailed = false;
+    currentCaptcha = null;
+    captchaQuestions = [];
     timeLeft = CONFIG.questionTime;
 
     document.getElementById('quizContent').classList.remove('hidden');
